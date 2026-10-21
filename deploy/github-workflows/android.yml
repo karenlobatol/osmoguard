@@ -1,0 +1,60 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: "URL HTTPS de la API (termina en /api)"
+        required: true
+      version_name:
+        description: "Versión visible"
+        default: "1.0.0"
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      VITE_API_URL: ${{ inputs.api_url }}
+      ANDROID_VERSION_NAME: ${{ inputs.version_name }}
+      ANDROID_VERSION_CODE: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - name: Validar HTTPS
+        run: case "$VITE_API_URL" in https://*) ;; *) echo "La API debe ser HTTPS" && exit 1;; esac
+      - run: npm ci --ignore-scripts
+      - name: Build web
+        working-directory: apps/web
+        run: npx tsc --noEmit && npx vite build
+      - name: Capacitor sync
+        working-directory: apps/web
+        run: npx cap sync android
+      - name: APK de prueba (debug)
+        working-directory: apps/web/android
+        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - name: AAB firmado (si hay keystore configurado)
+        if: ${{ env.KEYSTORE_B64 != '' }}
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        working-directory: apps/web/android
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/release.jks" ./gradlew bundleRelease --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: osmoguard-apk-${{ inputs.version_name }}
+          path: |
+            apps/web/android/app/build/outputs/apk/debug/*.apk
+            apps/web/android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: warn

@@ -58,7 +58,8 @@ export async function buildApp({ env, prisma = new PrismaClient(), logger, maile
       // Nunca registrar credenciales, cookies ni tokens.
       redact: ["req.headers.authorization", "req.headers.cookie", 'res.headers["set-cookie"]'],
     },
-    trustProxy: env.TRUST_PROXY,
+    // Con un número N se confía en los N saltos más cercanos (evita falsear X-Forwarded-For).
+    trustProxy: typeof env.TRUST_PROXY === "number" ? ((_addr: string, hop: number) => hop < (env.TRUST_PROXY as number)) : env.TRUST_PROXY,
     bodyLimit: 64 * 1024,
     disableRequestLogging: env.NODE_ENV === "test",
   }).withTypeProvider<ZodTypeProvider>();

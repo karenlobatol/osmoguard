@@ -11,3 +11,6 @@ test-results
 apps/web/android/app/build
 apps/web/android/.gradle
 *.tsbuildinfo
+*.jks
+*.keystore
+apps/web/android/app/release

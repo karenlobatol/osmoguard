@@ -1,0 +1,11 @@
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+**/.pgdata*
+**/test-results
+**/playwright-report
+apps/web/android
+.git
+docs

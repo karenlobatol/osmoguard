@@ -20,7 +20,12 @@ const envSchema = z
     REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(60).default(14),
     SMTP_URL: z.string().optional().transform((v) => (v ? v : undefined)),
     MAIL_FROM: z.string().default("Osmoguard <no-reply@osmoguard.local>"),
-    TRUST_PROXY: bool.default("false"),
+    /** "false", "true" o número de proxies de confianza (recomendado: 2 = Traefik/cloudflared + nginx). */
+    TRUST_PROXY: z
+      .string()
+      .default("false")
+      .transform((v) => (v === "true" ? true : v === "false" ? false : Number(v)))
+      .refine((v) => typeof v === "boolean" || (Number.isInteger(v) && v >= 0 && v <= 5), "TRUST_PROXY inválido"),
     ENABLE_DOCS: bool.default("true"),
     /** Multiplicador de los límites de peticiones (1 en producción; mayor solo en desarrollo/E2E). */
     RATE_LIMIT_FACTOR: z.coerce.number().int().min(1).max(100).default(1),

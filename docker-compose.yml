@@ -1,0 +1,81 @@
+# Osmoguard — stack completo para Coolify (Docker Compose build pack).
+#
+#   web     nginx: PWA + proxy /api        → dominio público (Coolify / Traefik, puerto 8080)
+#   api     Fastify + Prisma               → solo red interna
+#   db      PostgreSQL 17                  → solo red interna, volumen persistente
+#   tunnel  Cloudflare Quick Tunnel        → URL https://*.trycloudflare.com hacia web
+#
+# Los secretos se definen en Coolify → Environment Variables (ver docs/DEPLOYMENT.md).
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: osmoguard
+      POSTGRES_USER: osmoguard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requerido}
+    volumes:
+      - osmoguard-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U osmoguard -d osmoguard"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    labels:
+      - "com.osmoguard.role=database"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://osmoguard:${POSTGRES_PASSWORD}@db:5432/osmoguard?schema=public
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET requerido}
+      DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:?DATA_ENCRYPTION_KEY requerido}
+      AUDIT_HMAC_KEY: ${AUDIT_HMAC_KEY:?AUDIT_HMAC_KEY requerido}
+      APP_URL: ${APP_URL:?APP_URL requerido}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://localhost}
+      REFRESH_COOKIE_SAMESITE: ${REFRESH_COOKIE_SAMESITE:-none}
+      TRUST_PROXY: ${TRUST_PROXY:-2}
+      ENABLE_DOCS: ${ENABLE_DOCS:-true}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-Osmoguard <no-reply@osmoguard.app>}
+      RATE_LIMIT_FACTOR: "1"
+    labels:
+      - "com.osmoguard.role=api"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_URL: /api
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      - SERVICE_FQDN_WEB_8080
+    labels:
+      - "com.osmoguard.role=web"
+
+  tunnel:
+    image: cloudflare/cloudflared:2026.10.2
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    command: tunnel --no-autoupdate --metrics 0.0.0.0:2000 --url http://web:8080
+    labels:
+      - "com.osmoguard.role=tunnel"
+
+volumes:
+  osmoguard-pgdata:
