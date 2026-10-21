@@ -82,6 +82,17 @@ describe("refresh tokens rotativos", () => {
     expect(evil.statusCode).toBe(403);
   });
 
+  it("acepta peticiones del mismo origen aunque no estén en la lista (túnel)", async () => {
+    const u = await registerUser(app);
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/refresh",
+      cookies: { og_rt: u.refresh },
+      headers: { ...csrf, origin: "https://demo.trycloudflare.com", host: "demo.trycloudflare.com" },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
   it("rota el token y detecta reutilización revocando la familia", async () => {
     const u = await registerUser(app);
     const r1 = await app.inject({ method: "POST", url: "/api/auth/refresh", cookies: { og_rt: u.refresh }, headers: csrf });

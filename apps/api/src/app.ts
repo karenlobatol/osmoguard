@@ -1,4 +1,4 @@
-import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify";
+import Fastify, { type FastifyInstance, type FastifyRequest, type FastifyServerOptions } from "fastify";
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
@@ -41,6 +41,16 @@ declare module "fastify" {
   }
   interface FastifyRequest {
     auth: AccessClaims;
+  }
+}
+
+/** Origen igual al host al que se dirigió la petición (p. ej. acceso por el túnel de Cloudflare). */
+function isSameOrigin(origin: string, req: FastifyRequest): boolean {
+  try {
+    const host = (req.headers["x-forwarded-host"] as string | undefined)?.split(",")[0]?.trim() ?? req.headers.host;
+    return !!host && new URL(origin).host === host;
+  } catch {
+    return false;
   }
 }
 
@@ -95,7 +105,7 @@ export async function buildApp({ env, prisma = new PrismaClient(), logger, maile
   app.decorate("csrfGuard", async (req) => {
     if (req.headers["x-osmoguard-csrf"] !== "1") throw new AppError(403, "CSRF", "Solicitud rechazada");
     const origin = req.headers.origin;
-    if (origin && !allowedOrigins.has(origin)) throw new AppError(403, "CSRF", "Origen no permitido");
+    if (origin && !allowedOrigins.has(origin) && !isSameOrigin(origin, req)) throw new AppError(403, "CSRF", "Origen no permitido");
   });
 
   await app.register(helmet, {
