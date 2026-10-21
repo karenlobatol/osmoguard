@@ -18,6 +18,7 @@ RUN cd apps/web && npx tsc --noEmit && npx vite build
 
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
 COPY deploy/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY deploy/nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=5 CMD wget -qO- http://127.0.0.1:8080/healthz || exit 1

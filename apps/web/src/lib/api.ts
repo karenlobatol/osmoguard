@@ -1,7 +1,26 @@
 import type { ApiErrorBody, AuthResponse } from "@osmoguard/contracts";
 
-/** En la web la API comparte origen (/api). En el APK se define VITE_API_URL=https://…/api */
-export const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "/api";
+import { Capacitor } from "@capacitor/core";
+
+const SERVER_KEY = "og_api_url";
+const BUILD_API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "/api";
+
+/** En la web la API comparte origen (/api). En el APK se usa VITE_API_URL o el servidor configurado por el usuario (solo HTTPS). */
+export function getApiUrl(): string {
+  if (Capacitor.isNativePlatform()) {
+    const custom = localStorage.getItem(SERVER_KEY);
+    if (custom) return custom;
+  }
+  return BUILD_API_URL;
+}
+
+export function setApiServer(url: string | null) {
+  if (!url) return localStorage.removeItem(SERVER_KEY);
+  const u = new URL(url);
+  if (u.protocol !== "https:") throw new Error("El servidor debe usar HTTPS");
+  const path = u.pathname.replace(/\/+$/, "");
+  localStorage.setItem(SERVER_KEY, `${u.origin}${path.endsWith("/api") ? path : `${path}/api`}`);
+}
 
 export class ApiError extends Error {
   constructor(
@@ -36,7 +55,7 @@ async function parse(res: Response) {
 export function refreshSession(): Promise<AuthResponse | null> {
   refreshing ??= (async () => {
     for (let attempt = 0; attempt < 2; attempt++) {
-      const res = await fetch(`${API_URL}/auth/refresh`, {
+      const res = await fetch(`${getApiUrl()}/auth/refresh`, {
         method: "POST",
         credentials: "include",
         headers: { "X-Osmoguard-Csrf": "1" },
@@ -64,7 +83,7 @@ export function refreshSession(): Promise<AuthResponse | null> {
 export async function api<T>(path: string, init: RequestInit & { json?: unknown; auth?: boolean } = {}): Promise<T> {
   const { json, auth = true, headers, ...rest } = init;
   const doFetch = () =>
-    fetch(`${API_URL}${path}`, {
+    fetch(`${getApiUrl()}${path}`, {
       ...rest,
       credentials: "include",
       headers: {

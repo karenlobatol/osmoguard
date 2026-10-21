@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 import { AuthLayout } from "./AuthLayout";
 import { FormError } from "./FormError";
+import { ServerSetting } from "./ServerSetting";
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -51,6 +52,7 @@ export function LoginPage() {
           Crear cuenta
         </Link>
       </p>
+      <ServerSetting />
       <p className="mt-3 text-center text-sm">
         <Link to="/ciencia/publica" className="text-slate-500 hover:text-brand-600 hover:underline">
           Información científica y limitaciones

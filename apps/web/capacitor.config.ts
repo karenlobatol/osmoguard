@@ -8,6 +8,9 @@ const config: CapacitorConfig = {
   android: { allowMixedContent: false, webContentsDebuggingEnabled: false },
   server: { androidScheme: "https", cleartext: false },
   plugins: {
+    // HTTP nativo: evita las restricciones de cookies de terceros del WebView para el refresh token.
+    CapacitorHttp: { enabled: true },
+    CapacitorCookies: { enabled: true },
     SplashScreen: { launchShowDuration: 1200, launchAutoHide: false, backgroundColor: "#0B4F83", showSpinner: false },
   },
 };
