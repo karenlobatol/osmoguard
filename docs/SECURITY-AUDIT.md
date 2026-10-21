@@ -47,14 +47,14 @@
 | TypeScript strict (`noUncheckedIndexedAccess`) en los 4 paquetes | ✅ Sin errores |
 | Pruebas unitarias del motor | ✅ 53/53 |
 | Pruebas de integración de la API (PostgreSQL real) | ✅ 25/25 |
-| Playwright (escritorio + Pixel 7) | ✅ 6/6 local · 6/6 producción |
-| Lighthouse (producción, `/login`, móvil) | Rendimiento 86* · Accesibilidad 100 · Buenas prácticas 96 · SEO 54** |
+| Playwright (escritorio + Pixel 7) | ✅ 6/6 local (dev y build de producción) · 6/6 contra producción por el túnel |
+| Lighthouse (producción por túnel, `/login`, móvil) | Rendimiento 93* · Accesibilidad 100 · Buenas prácticas 100 · SEO 54** (FCP 1,7 s · LCP 2,0 s · CLS 0) |
 | Errores de consola | Corregido el 401 inicial sin sesión |
 | Migraciones | ✅ `prisma migrate deploy` aplicado en el primer arranque de producción |
 | Restauración desde backup | ⏳ Pendiente de simulacro (R-1) |
 | Lint | ⚠️ No hay ESLint configurado; el tipado estricto cubre parte (R-6) |
 
-\* Medido antes de separar Motion y Recharts del primer render; el bundle inicial bajó de 721 KB a 228 KB + 262 KB (React).
+\* Antes de separar Motion y Recharts del primer render era 86 (FCP 3,2 s); el JavaScript inicial bajó de 721 KB a 228 KB + 262 KB (React, cacheable).
 \** El túnel rápido de Cloudflare añade `noindex`. Es deseable para una demo educativa.
 
 ## 3. Correcciones realizadas durante la auditoría
