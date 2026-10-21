@@ -67,3 +67,7 @@ export function useDeleteSimulation() {
     },
   });
 }
+
+export function useTool<TOut>(module: "acid-base" | "osmolality" | "potassium" | "calcium") {
+  return useMutation({ mutationFn: (input: unknown) => api<TOut>(`/tools/${module}`, { method: "POST", json: input }) });
+}

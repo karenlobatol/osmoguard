@@ -4,9 +4,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { z } from "zod";
 import { forgotPasswordSchema, passwordSchema, type ForgotPasswordInput } from "@osmoguard/contracts";
-import { Button } from "@/components/ui/button";
+import { Loader2, Lock, Mail } from "lucide-react";
+import { AuthInput, authPrimary } from "@/components/ui/auth-input";
 import { Field } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { api, ApiError } from "@/lib/api";
 import { AuthLayout } from "./AuthLayout";
 import { FormError, FormSuccess } from "./FormError";
@@ -31,15 +31,15 @@ export function ForgotPasswordPage() {
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           <FormError message={errors.root?.message} />
           <Field label="Correo electrónico" error={errors.email?.message}>
-            <Input type="email" autoComplete="email" {...form.register("email")} />
+            <AuthInput icon={<Mail />} type="email" autoComplete="email" inputMode="email" placeholder="nombre@hospital.com" {...form.register("email")} />
           </Field>
-          <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
-            Enviar enlace
-          </Button>
+          <button type="submit" disabled={isSubmitting} className={`${authPrimary} flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer`}>
+            {isSubmitting ? <Loader2 className="size-5 animate-spin" /> : "Enviar enlace"}
+          </button>
         </form>
       )}
       <p className="mt-8 text-center text-sm">
-        <Link to="/login" className="font-medium text-brand-600 hover:underline">
+        <Link to="/login" className="font-semibold text-brand-600 hover:text-brand-700">
           Volver a iniciar sesión
         </Link>
       </p>
@@ -73,14 +73,14 @@ export function ResetPasswordPage() {
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           <FormError message={errors.root?.message} />
           <Field label="Nueva contraseña" hint="Mínimo 10 caracteres, con letras y números." error={errors.password?.message}>
-            <Input type="password" autoComplete="new-password" {...form.register("password")} />
+            <AuthInput icon={<Lock />} type="password" autoComplete="new-password" {...form.register("password")} />
           </Field>
           <Field label="Repetir contraseña" error={errors.confirm?.message}>
-            <Input type="password" autoComplete="new-password" {...form.register("confirm")} />
+            <AuthInput icon={<Lock />} type="password" autoComplete="new-password" {...form.register("confirm")} />
           </Field>
-          <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
-            Guardar contraseña
-          </Button>
+          <button type="submit" disabled={isSubmitting} className={`${authPrimary} flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer`}>
+            {isSubmitting ? <Loader2 className="size-5 animate-spin" /> : "Guardar contraseña"}
+          </button>
         </form>
       )}
     </AuthLayout>

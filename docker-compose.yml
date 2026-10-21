@@ -49,6 +49,8 @@ services:
       SMTP_URL: ${SMTP_URL:-}
       MAIL_FROM: ${MAIL_FROM:-Osmoguard <no-reply@osmoguard.app>}
       RATE_LIMIT_FACTOR: "1"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.4-mini}
     labels:
       - "com.osmoguard.role=api"
 

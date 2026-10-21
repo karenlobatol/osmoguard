@@ -63,6 +63,46 @@ export const REFERENCES = {
       "Barsoum NR, Levine BS. Current prescriptions for the correction of hyponatraemia and hypernatraemia: are they too simple? Nephrol Dial Transplant. 2002;17(7):1176-1180.",
     url: "https://doi.org/10.1093/ndt/17.7.1176",
   },
+  berend: {
+    id: "berend",
+    citation: "Berend K, de Vries APJ, Gans ROB. Physiological approach to assessment of acid-base disturbances. N Engl J Med. 2014;371(15):1434-1445.",
+    url: "https://doi.org/10.1056/NEJMra1003327",
+  },
+  figge: {
+    id: "figge",
+    citation: "Figge J, Jabor A, Kazda A, Fencl V. Anion gap and hypoalbuminemia. Crit Care Med. 1998;26(11):1807-1810.",
+    url: "https://doi.org/10.1097/00003246-199811000-00019",
+  },
+  albert: {
+    id: "albert",
+    citation: "Albert MS, Dell RB, Winters RW. Quantitative displacement of acid-base equilibrium in metabolic acidosis. Ann Intern Med. 1967;66(2):312-322.",
+    url: "https://doi.org/10.7326/0003-4819-66-2-312",
+  },
+  kraut: {
+    id: "kraut",
+    citation: "Kraut JA, Kurtz I. Toxic alcohol ingestions: clinical features, diagnosis, and management. Clin J Am Soc Nephrol. 2008;3(1):208-225.",
+    url: "https://doi.org/10.2215/CJN.03220807",
+  },
+  gennari: {
+    id: "gennari",
+    citation: "Gennari FJ. Hypokalemia. N Engl J Med. 1998;339(7):451-458.",
+    url: "https://doi.org/10.1056/NEJM199808133390707",
+  },
+  weiner: {
+    id: "weiner",
+    citation: "Weiner ID, Wingo CS. Hyperkalemia: a potential silent killer. J Am Soc Nephrol. 1998;9(8):1535-1543.",
+    url: "https://doi.org/10.1681/ASN.V981535",
+  },
+  adrogueK: {
+    id: "adrogueK",
+    citation: "Adrogué HJ, Madias NE. Changes in plasma potassium concentration during acute acid-base disturbances. Am J Med. 1981;71(3):456-467.",
+    url: "https://doi.org/10.1016/0002-9343(81)90298-8",
+  },
+  payne: {
+    id: "payne",
+    citation: "Payne RB, Little AJ, Williams RB, Milner JR. Interpretation of serum calcium in patients with abnormal serum proteins. Br Med J. 1973;4(5893):643-646.",
+    url: "https://doi.org/10.1136/bmj.4.5893.643",
+  },
 } as const satisfies Record<string, Reference>;
 
 export type ReferenceId = keyof typeof REFERENCES;

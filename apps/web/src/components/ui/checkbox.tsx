@@ -7,7 +7,7 @@ interface Props extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
 }
 
 export const Checkbox = forwardRef<HTMLInputElement, Props>(({ label, description, className, ...props }, ref) => (
-  <label className={cn("flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 hover:border-brand-200 has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50/60", className)}>
+  <label className={cn("flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-3.5 hover:border-brand-200 has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50/60", className)}>
     <input ref={ref} type="checkbox" className="mt-0.5 size-4 shrink-0 accent-brand-600" {...props} />
     <span className="text-sm">
       <span className="font-medium text-slate-800">{label}</span>

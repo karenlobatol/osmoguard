@@ -1,170 +1,238 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "motion/react";
 import { toast } from "sonner";
-import { LogOut, Monitor, Save, Trash2 } from "lucide-react";
+import { ChevronRight, KeyRound, Laptop, LogOut, MonitorSmartphone, ShieldAlert, Smartphone, Trash2 } from "lucide-react";
+import { Slider } from "radix-ui";
 import { z } from "zod";
-import { alertConfigSchema, type AlertConfig } from "@osmoguard/engine";
+import { DEFAULT_ALERT_CONFIG, type AlertConfig } from "@osmoguard/engine";
 import { changePasswordSchema, type ChangePasswordInput, type UserDto } from "@osmoguard/contracts";
-import { PageHeader } from "@/components/States";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/ui/dialog";
+import { AuthInput, authPrimary } from "@/components/ui/auth-input";
 import { Field } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Sheet } from "@/components/ui/sheet";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { fmtDate } from "@/lib/format";
-import { useEngineInfo } from "@/lib/queries";
-
-const profileForm = z.object({ name: z.string().trim().min(2, "Demasiado corto").max(80), profession: z.string().trim().max(80) });
-const num = { valueAsNumber: true } as const;
+import { cn } from "@/lib/utils";
 
 export function ProfilePage() {
   const { user, setUser, logout } = useAuth();
   const navigate = useNavigate();
+  const [sheet, setSheet] = useState<null | "password" | "delete" | "sessions">(null);
   if (!user) return null;
+  const initials = user.name.split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+  const signOut = async () => {
+    await logout();
+    navigate("/login");
+  };
+
   return (
-    <div className="space-y-6">
-      <PageHeader eyebrow="Cuenta" title="Perfil y configuración" />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <ProfileCard user={user} onSaved={setUser} />
-        <AlertsCard user={user} onSaved={setUser} />
-        <PasswordCard />
-        <SessionsCard
+    <div className="space-y-8">
+      <motion.header initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center pt-2 text-center">
+        <span className="flex size-24 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-3xl font-semibold text-white shadow-[0_14px_30px_-10px_rgb(11_79_131/0.6)]">
+          {initials}
+        </span>
+        <h1 className="mt-4 text-[26px] font-semibold tracking-[-0.025em]">{user.name}</h1>
+        <p className="text-[15px] text-slate-500">{user.profession || user.email}</p>
+      </motion.header>
+
+      <AccountGroup user={user} onSaved={setUser} />
+      <ThresholdsGroup user={user} onSaved={setUser} />
+
+      <Group title="Seguridad">
+        <Row icon={<KeyRound />} label="Cambiar contraseña" onClick={() => setSheet("password")} />
+        <Row icon={<MonitorSmartphone />} label="Sesiones activas" onClick={() => setSheet("sessions")} />
+        <Row icon={<LogOut />} label="Cerrar sesión" onClick={() => void signOut()} />
+      </Group>
+
+      <Group>
+        <Row icon={<Trash2 />} label="Eliminar cuenta" danger onClick={() => setSheet("delete")} />
+      </Group>
+
+      <p className="pb-2 text-center text-xs text-slate-500">Osmoguard · simulador educativo · no es un dispositivo médico</p>
+
+      <Sheet open={sheet === "password"} onOpenChange={(o) => !o && setSheet(null)} title="Cambiar contraseña" description="Se cerrarán las demás sesiones abiertas.">
+        <PasswordForm onDone={() => setSheet(null)} />
+      </Sheet>
+      <Sheet open={sheet === "sessions"} onOpenChange={(o) => !o && setSheet(null)} title="Sesiones activas" description="Dispositivos con la sesión abierta.">
+        <SessionsList
           onLogoutAll={async () => {
             await api("/auth/logout-all", { method: "POST" });
-            await logout();
-            navigate("/login");
+            await signOut();
           }}
         />
-      </div>
-      <DangerZone
-        onDeleted={async () => {
-          await logout();
-          navigate("/login");
-        }}
-      />
+      </Sheet>
+      <Sheet open={sheet === "delete"} onOpenChange={(o) => !o && setSheet(null)} title="Eliminar cuenta" description="Se borrarán su cuenta y todas sus simulaciones. No se puede deshacer.">
+        <DeleteForm onDeleted={signOut} />
+      </Sheet>
     </div>
   );
 }
 
-function ProfileCard({ user, onSaved }: { user: UserDto; onSaved: (u: UserDto) => void }) {
+/* ---------- Bloques de la lista agrupada ---------- */
+
+function Group({ title, footer, children }: { title?: string; footer?: ReactNode; children: ReactNode }) {
+  return (
+    <section>
+      {title && <h2 className="mb-2 px-4 text-[13px] font-semibold uppercase tracking-[0.06em] text-slate-500">{title}</h2>}
+      <div className="divide-y divide-slate-100 overflow-hidden rounded-3xl bg-white shadow-card ring-1 ring-slate-900/[0.04]">{children}</div>
+      {footer && <p className="mt-2 px-4 text-[13px] leading-snug text-slate-500">{footer}</p>}
+    </section>
+  );
+}
+
+function Row({ icon, label, value, onClick, danger }: { icon: ReactNode; label: string; value?: string; onClick: () => void; danger?: boolean }) {
+  return (
+    <button type="button" onClick={onClick} className="flex w-full items-center gap-3.5 px-5 py-4 text-left transition-colors hover:bg-slate-50 active:bg-slate-100 cursor-pointer">
+      <span className={cn("[&_svg]:size-[19px]", danger ? "text-red-600" : "text-slate-500")}>{icon}</span>
+      <span className={cn("flex-1 text-[15px] font-medium", danger && "text-red-600")}>{label}</span>
+      {value && <span className="text-[15px] text-slate-500">{value}</span>}
+      {!danger && <ChevronRight className="size-5 text-slate-300" />}
+    </button>
+  );
+}
+
+const profileForm = z.object({ name: z.string().trim().min(2, "Demasiado corto").max(80), profession: z.string().trim().max(80) });
+
+function AccountGroup({ user, onSaved }: { user: UserDto; onSaved: (u: UserDto) => void }) {
   const form = useForm<z.infer<typeof profileForm>>({ resolver: zodResolver(profileForm), defaultValues: { name: user.name, profession: user.profession ?? "" } });
+  const dirty = form.formState.isDirty;
   const submit = form.handleSubmit(async (v) => {
     try {
       onSaved(await api<UserDto>("/users/me", { method: "PATCH", json: { name: v.name, profession: v.profession || null } }));
+      form.reset(v);
       toast.success("Perfil actualizado");
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "No se pudo guardar");
     }
   });
+  const inline = "w-full bg-transparent text-right text-[15px] text-slate-600 outline-none placeholder:text-slate-400 focus:text-ink";
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Datos personales</CardTitle>
-        <CardDescription>{user.email}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={submit} className="space-y-4" noValidate>
-          <Field label="Nombre" error={form.formState.errors.name?.message}>
-            <Input {...form.register("name")} />
-          </Field>
-          <Field label="Profesión o rol" optional>
-            <Input placeholder="p. ej. Residente de medicina interna" {...form.register("profession")} />
-          </Field>
-          <Button type="submit" loading={form.formState.isSubmitting}>
-            <Save /> Guardar
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+    <form onSubmit={submit} noValidate>
+      <Group title="Cuenta" footer={form.formState.errors.name?.message}>
+        <label className="flex items-center gap-4 px-5 py-4">
+          <span className="w-24 shrink-0 text-[15px] font-medium">Nombre</span>
+          <input className={inline} autoComplete="name" {...form.register("name")} />
+        </label>
+        <label className="flex items-center gap-4 px-5 py-4">
+          <span className="w-24 shrink-0 text-[15px] font-medium">Profesión</span>
+          <input className={inline} placeholder="Opcional" {...form.register("profession")} />
+        </label>
+        <div className="flex items-center gap-4 px-5 py-4">
+          <span className="w-24 shrink-0 text-[15px] font-medium">Correo</span>
+          <span className="flex-1 truncate text-right text-[15px] text-slate-500">{user.email}</span>
+        </div>
+      </Group>
+      {dirty && (
+        <motion.button initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} type="submit" className={cn(authPrimary, "mt-3 cursor-pointer")}>
+          Guardar cambios
+        </motion.button>
+      )}
+    </form>
   );
 }
 
-function AlertsCard({ user, onSaved }: { user: UserDto; onSaved: (u: UserDto) => void }) {
-  const engine = useEngineInfo();
-  const form = useForm<AlertConfig>({ resolver: zodResolver(alertConfigSchema) as never, defaultValues: user.alertConfig });
-  const e = form.formState.errors;
-  const submit = form.handleSubmit(async (v) => {
+const THRESHOLDS: { key: keyof AlertConfig; label: string; help: string; min: number; max: number; sign: "+" | "−" }[] = [
+  { key: "hypoMaxRise24hStandard", label: "Hiponatremia · 24 h", help: "Subida máxima", min: 6, max: 12, sign: "+" },
+  { key: "hypoMaxRise24hHighRisk", label: "Alto riesgo de desmielinización · 24 h", help: "Subida máxima", min: 4, max: 10, sign: "+" },
+  { key: "hypoMaxRise48h", label: "Hiponatremia · 48 h", help: "Subida acumulada máxima", min: 12, max: 20, sign: "+" },
+  { key: "hyperMaxFall24h", label: "Hipernatremia · 24 h", help: "Bajada máxima", min: 6, max: 12, sign: "−" },
+];
+
+function ThresholdsGroup({ user, onSaved }: { user: UserDto; onSaved: (u: UserDto) => void }) {
+  const [cfg, setCfg] = useState<AlertConfig>(user.alertConfig);
+  const [saving, setSaving] = useState(false);
+  const dirty = JSON.stringify(cfg) !== JSON.stringify(user.alertConfig);
+  const isDefault = JSON.stringify(cfg) === JSON.stringify(DEFAULT_ALERT_CONFIG);
+  const save = async () => {
+    setSaving(true);
     try {
-      onSaved(await api<UserDto>("/users/me", { method: "PATCH", json: { alertConfig: v } }));
+      onSaved(await api<UserDto>("/users/me", { method: "PATCH", json: { alertConfig: cfg } }));
       toast.success("Umbrales actualizados");
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo guardar");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "No se pudo guardar");
+    } finally {
+      setSaving(false);
     }
-  });
+  };
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Umbrales de alerta</CardTitle>
-        <CardDescription>Acotados a rangos de las guías. Se aplican a las nuevas simulaciones.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2" noValidate>
-          <Field label="Hiponatremia: subida máx. 24 h" hint="Rango 6–12" error={e.hypoMaxRise24hStandard?.message}>
-            <Input type="number" step="0.5" unit="mmol/L" {...form.register("hypoMaxRise24hStandard", num)} />
-          </Field>
-          <Field label="Alto riesgo ODS: subida máx. 24 h" hint="Rango 4–10" error={e.hypoMaxRise24hHighRisk?.message}>
-            <Input type="number" step="0.5" unit="mmol/L" {...form.register("hypoMaxRise24hHighRisk", num)} />
-          </Field>
-          <Field label="Hiponatremia: subida máx. 48 h" hint="Rango 12–20" error={e.hypoMaxRise48h?.message}>
-            <Input type="number" step="0.5" unit="mmol/L" {...form.register("hypoMaxRise48h", num)} />
-          </Field>
-          <Field label="Hipernatremia: bajada máx. 24 h" hint="Rango 6–12" error={e.hyperMaxFall24h?.message}>
-            <Input type="number" step="0.5" unit="mmol/L" {...form.register("hyperMaxFall24h", num)} />
-          </Field>
-          <div className="flex flex-wrap gap-2 sm:col-span-2">
-            <Button type="submit" loading={form.formState.isSubmitting}>
-              <Save /> Guardar umbrales
-            </Button>
-            {engine.data && (
-              <Button type="button" variant="ghost" onClick={() => form.reset(engine.data.defaultAlertConfig)}>
-                Restablecer valores por defecto
-              </Button>
-            )}
+    <div>
+      <Group title="Umbrales de alerta" footer="Límites de corrección usados para avisar de una posible sobrecorrección. Acotados a los rangos de las guías clínicas.">
+        {THRESHOLDS.map((t) => (
+          <div key={t.key} className="px-5 py-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <span>
+                <span className="block text-[15px] font-medium">{t.label}</span>
+                <span className="text-[12px] text-slate-500">{t.help}</span>
+              </span>
+              <span className="tabular shrink-0 text-[17px] font-semibold">
+                {t.sign}
+                {cfg[t.key]} <span className="text-[12px] font-medium text-slate-500">mmol/L</span>
+              </span>
+            </div>
+            <Slider.Root
+              className="relative mt-3 flex h-6 touch-none select-none items-center"
+              min={t.min}
+              max={t.max}
+              step={0.5}
+              value={[cfg[t.key]]}
+              onValueChange={([v]) => setCfg((c) => ({ ...c, [t.key]: v }))}
+              aria-label={t.label}
+            >
+              <Slider.Track className="relative h-1.5 grow rounded-full bg-slate-200">
+                <Slider.Range className="absolute h-full rounded-full bg-brand-600" />
+              </Slider.Track>
+              <Slider.Thumb className="block size-6 rounded-full border border-slate-200 bg-white shadow-[0_2px_8px_rgb(15_23_42/0.2)] outline-none focus-visible:ring-4 focus-visible:ring-brand-500/20" />
+            </Slider.Root>
+            <div className="mt-1 flex justify-between text-[11px] font-medium text-slate-500">
+              <span>{t.min}</span>
+              <span>{t.max}</span>
+            </div>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+        ))}
+      </Group>
+      <div className="mt-3 flex gap-2">
+        {!isDefault && (
+          <button type="button" onClick={() => setCfg(DEFAULT_ALERT_CONFIG)} className="h-11 rounded-full px-4 text-[14px] font-semibold text-brand-600 hover:bg-brand-50 cursor-pointer">
+            Valores por defecto
+          </button>
+        )}
+        {dirty && (
+          <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} type="button" onClick={() => void save()} disabled={saving} className="ml-auto h-11 rounded-full bg-slate-900 px-5 text-[14px] font-semibold text-white disabled:opacity-60 cursor-pointer">
+            {saving ? "Guardando…" : "Guardar umbrales"}
+          </motion.button>
+        )}
+      </div>
+    </div>
   );
 }
 
-function PasswordCard() {
+function PasswordForm({ onDone }: { onDone: () => void }) {
   const form = useForm<ChangePasswordInput>({ resolver: zodResolver(changePasswordSchema) });
   const e = form.formState.errors;
   const submit = form.handleSubmit(async (v) => {
     try {
       await api("/users/me/password", { method: "POST", json: v });
-      form.reset({ currentPassword: "", newPassword: "" });
-      toast.success("Contraseña actualizada. Se cerraron las demás sesiones.");
+      toast.success("Contraseña actualizada");
+      onDone();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "No se pudo cambiar");
     }
   });
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Cambiar contraseña</CardTitle>
-        <CardDescription>Cerrará todas las demás sesiones.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={submit} className="space-y-4" noValidate>
-          <Field label="Contraseña actual" error={e.currentPassword?.message}>
-            <Input type="password" autoComplete="current-password" {...form.register("currentPassword")} />
-          </Field>
-          <Field label="Nueva contraseña" error={e.newPassword?.message} hint="Mínimo 10 caracteres, con letras y números.">
-            <Input type="password" autoComplete="new-password" {...form.register("newPassword")} />
-          </Field>
-          <Button type="submit" loading={form.formState.isSubmitting}>
-            Actualizar contraseña
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+    <form onSubmit={submit} className="space-y-4" noValidate>
+      <Field label="Contraseña actual" error={e.currentPassword?.message}>
+        <AuthInput icon={<KeyRound />} type="password" autoComplete="current-password" {...form.register("currentPassword")} />
+      </Field>
+      <Field label="Nueva contraseña" error={e.newPassword?.message} hint="Mínimo 10 caracteres, con letras y números.">
+        <AuthInput icon={<KeyRound />} type="password" autoComplete="new-password" {...form.register("newPassword")} />
+      </Field>
+      <button type="submit" disabled={form.formState.isSubmitting} className={cn(authPrimary, "cursor-pointer disabled:opacity-60")}>
+        Actualizar contraseña
+      </button>
+    </form>
   );
 }
 
@@ -172,38 +240,33 @@ interface SessionRow {
   familyId: string;
   userAgent: string | null;
   createdAt: string;
-  lastUsedAt: string;
   current: boolean;
 }
 
-function SessionsCard({ onLogoutAll }: { onLogoutAll: () => Promise<void> }) {
+function SessionsList({ onLogoutAll }: { onLogoutAll: () => Promise<void> }) {
   const sessions = useQuery({ queryKey: ["sessions"], queryFn: () => api<SessionRow[]>("/users/me/sessions") });
-  // Una familia puede tener varias filas activas solo transitoriamente; se muestra una por familia.
   const rows = [...new Map((sessions.data ?? []).map((s) => [s.familyId, s])).values()];
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Sesiones activas</CardTitle>
-        <CardDescription>Dispositivos con sesión abierta.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <ul className="space-y-2">
-          {rows.map((s) => (
-            <li key={s.familyId} className="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm">
-              <Monitor className="size-4 shrink-0 text-slate-500" />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate">{describeAgent(s.userAgent)}</span>
-                <span className="text-xs text-slate-500">Desde {fmtDate(s.createdAt)}</span>
+    <div>
+      <ul className="divide-y divide-slate-100 rounded-2xl bg-slate-50">
+        {rows.map((s) => {
+          const mobile = /Android|iPhone|iPad/.test(s.userAgent ?? "");
+          return (
+            <li key={s.familyId} className="flex items-center gap-3 px-4 py-3.5">
+              {mobile ? <Smartphone className="size-5 text-slate-500" /> : <Laptop className="size-5 text-slate-500" />}
+              <span className="flex-1">
+                <span className="block text-[15px] font-medium">{describeAgent(s.userAgent)}</span>
+                <span className="text-[12px] text-slate-500">Desde {new Intl.DateTimeFormat("es-EC", { dateStyle: "medium" }).format(new Date(s.createdAt))}</span>
               </span>
-              {s.current && <Badge tone="teal">Actual</Badge>}
+              {s.current && <span className="rounded-full bg-ok-100 px-2 py-0.5 text-[11px] font-semibold text-ok-700">Este dispositivo</span>}
             </li>
-          ))}
-        </ul>
-        <Button variant="outline" onClick={() => void onLogoutAll()}>
-          <LogOut /> Cerrar todas las sesiones
-        </Button>
-      </CardContent>
-    </Card>
+          );
+        })}
+      </ul>
+      <button type="button" onClick={() => void onLogoutAll()} className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-red-50 text-[15px] font-semibold text-red-700 cursor-pointer">
+        <LogOut className="size-4" /> Cerrar todas las sesiones
+      </button>
+    </div>
   );
 }
 
@@ -214,47 +277,37 @@ function describeAgent(ua: string | null) {
   return `${br} en ${os}`;
 }
 
-function DangerZone({ onDeleted }: { onDeleted: () => Promise<void> }) {
+function DeleteForm({ onDeleted }: { onDeleted: () => Promise<void> }) {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   return (
-    <Card className="border-red-200">
-      <CardHeader>
-        <CardTitle className="text-red-800">Eliminar cuenta</CardTitle>
-        <CardDescription>Borra de forma permanente su cuenta y todas sus simulaciones.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ConfirmDialog
-          trigger={
-            <Button variant="outline" className="border-red-300 text-red-700 hover:bg-red-50">
-              <Trash2 /> Eliminar mi cuenta
-            </Button>
+    <div className="space-y-4">
+      <div className="flex gap-3 rounded-2xl bg-red-50 p-4 text-[13px] text-red-800">
+        <ShieldAlert className="mt-0.5 size-5 shrink-0" />
+        Esta acción es permanente. Confirme con su contraseña.
+      </div>
+      <Field label="Contraseña">
+        <AuthInput icon={<KeyRound />} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+      </Field>
+      <button
+        type="button"
+        disabled={!password || busy}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            await api("/users/me", { method: "DELETE", json: { password } });
+            toast.success("Cuenta eliminada");
+            await onDeleted();
+          } catch (e) {
+            toast.error(e instanceof ApiError ? e.message : "No se pudo eliminar");
+          } finally {
+            setBusy(false);
           }
-          title="¿Eliminar la cuenta?"
-          description="Esta acción es irreversible. Confirme con su contraseña."
-          confirmLabel="Eliminar definitivamente"
-          destructive
-          loading={busy}
-          onConfirm={async () => {
-            setBusy(true);
-            try {
-              await api("/users/me", { method: "DELETE", json: { password } });
-              toast.success("Cuenta eliminada");
-              await onDeleted();
-            } catch (e) {
-              toast.error(e instanceof ApiError ? e.message : "No se pudo eliminar");
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          <div className="mt-4">
-            <Field label="Contraseña">
-              <Input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </Field>
-          </div>
-        </ConfirmDialog>
-      </CardContent>
-    </Card>
+        }}
+        className="h-[52px] w-full rounded-2xl bg-red-600 text-[15px] font-semibold text-white disabled:opacity-50 cursor-pointer"
+      >
+        {busy ? "Eliminando…" : "Eliminar definitivamente"}
+      </button>
+    </div>
   );
 }

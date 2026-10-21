@@ -13,7 +13,7 @@ export function LogoMark({ className }: { className?: string }) {
 export function Logo({ className, light }: { className?: string; light?: boolean }) {
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <LogoMark />
+      <LogoMark className={light ? "rounded-[10px] ring-1 ring-white/40" : undefined} />
       <span className="leading-tight">
         <span className={cn("block text-[17px] font-semibold tracking-tight", light ? "text-white" : "text-brand-800")}>Osmoguard</span>
         <span className={cn("block text-[11px] font-medium uppercase tracking-wider", light ? "text-brand-100" : "text-teal-700")}>Simulador educativo</span>

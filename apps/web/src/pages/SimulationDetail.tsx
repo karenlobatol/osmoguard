@@ -1,8 +1,9 @@
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { ArrowLeft, Copy, Info, Pencil, Trash2 } from "lucide-react";
-import { ErrorState, PageHeader } from "@/components/States";
-import { Button } from "@/components/ui/button";
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { ChevronLeft, Copy, Info, Loader2, Pencil, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ErrorState } from "@/components/States";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,57 +32,47 @@ export function SimulationDetailPage() {
 
   return (
     <div>
-      <Link to="/historial" className="mb-3 inline-flex items-center gap-1 text-sm text-slate-600 hover:text-brand-600">
-        <ArrowLeft className="size-4" /> Historial
+      <Link to="/historial" className="-ml-1 inline-flex items-center gap-0.5 text-[15px] font-medium text-brand-600">
+        <ChevronLeft className="size-5" /> Mis casos
       </Link>
-      <PageHeader
-        eyebrow={`Guardada el ${fmtDate(s.createdAt)}`}
-        title={s.title}
-        description={`Motor v${s.engineVersion} · ${s.scenarioCount} escenario${s.scenarioCount !== 1 ? "s" : ""}`}
-        actions={
-          <>
-            <Button variant="outline" onClick={() => navigate(`/simulaciones/nueva?desde=${s.id}`)}>
-              <Pencil /> Editar como nueva
-            </Button>
-            <Button
-              variant="outline"
-              loading={dup.isPending}
-              onClick={() =>
-                dup.mutate(s.id, {
-                  onSuccess: (copy) => {
-                    toast.success("Simulación duplicada con la versión actual del motor");
-                    navigate(`/simulaciones/${copy.id}`);
-                  },
-                  onError: (e) => toast.error(e instanceof ApiError ? e.message : "No se pudo duplicar"),
-                })
-              }
-            >
-              <Copy /> Duplicar
-            </Button>
-            <ConfirmDialog
-              trigger={
-                <Button variant="ghost" className="text-red-700 hover:bg-red-50">
-                  <Trash2 /> Eliminar
-                </Button>
-              }
-              title="¿Eliminar esta simulación?"
-              description="Se borrarán de forma permanente sus entradas y resultados. Esta acción no se puede deshacer."
-              confirmLabel="Eliminar"
-              destructive
-              loading={del.isPending}
-              onConfirm={() =>
-                del.mutate(s.id, {
-                  onSuccess: () => {
-                    toast.success("Simulación eliminada");
-                    navigate("/historial", { replace: true });
-                  },
-                  onError: (e) => toast.error(e instanceof ApiError ? e.message : "No se pudo eliminar"),
-                })
-              }
-            />
-          </>
-        }
-      />
+      <h1 className="mt-3 text-[30px] font-semibold leading-[1.1] tracking-[-0.03em]">{s.title}</h1>
+      <p className="mt-1.5 text-[13px] text-slate-500">
+        {fmtDate(s.createdAt)} · motor v{s.engineVersion}
+      </p>
+      <div className="mb-7 mt-5 flex gap-6">
+        <RoundAction icon={<Pencil />} label="Editar" onClick={() => navigate(`/simulaciones/nueva?desde=${s.id}`)} />
+        <RoundAction
+          icon={<Copy />}
+          label="Duplicar"
+          busy={dup.isPending}
+          onClick={() =>
+            dup.mutate(s.id, {
+              onSuccess: (copy) => {
+                toast.success("Duplicada con la versión actual del motor");
+                navigate(`/simulaciones/${copy.id}`);
+              },
+              onError: (e) => toast.error(e instanceof ApiError ? e.message : "No se pudo duplicar"),
+            })
+          }
+        />
+        <ConfirmDialog
+          trigger={<RoundAction icon={<Trash2 />} label="Eliminar" danger />}
+          title="¿Eliminar esta simulación?"
+          description="Se borrarán de forma permanente sus entradas y resultados. Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          destructive
+          loading={del.isPending}
+          onConfirm={() =>
+            del.mutate(s.id, {
+              onSuccess: () => {
+                toast.success("Simulación eliminada");
+                navigate("/historial", { replace: true });
+              },
+              onError: (e) => toast.error(e instanceof ApiError ? e.message : "No se pudo eliminar"),
+            })
+          }
+        />
+      </div>
       {s.engineOutdated && (
         <div className="mb-5 flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
           <Info className="mt-0.5 size-4 shrink-0" />
@@ -96,7 +87,25 @@ export function SimulationDetailPage() {
           </CardContent>
         </Card>
       )}
-      <ResultsView output={s.output} alertConfig={s.request.alertConfig} />
+      <ResultsView output={s.output} alertConfig={s.request.alertConfig} request={s.request} />
     </div>
   );
 }
+
+/** Acción circular con etiqueta (estilo nativo). Compatible con Radix `asChild` mediante forwardRef. */
+const RoundAction = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { icon: ReactNode; label: string; danger?: boolean; busy?: boolean }>(
+  ({ icon, label, danger, busy, className, ...props }, ref) => (
+    <button ref={ref} type="button" className={cn("group flex flex-col items-center gap-1.5 cursor-pointer", className)} {...props}>
+      <span
+        className={cn(
+          "flex size-12 items-center justify-center rounded-full bg-white shadow-card ring-1 ring-slate-900/5 transition-transform group-active:scale-95 [&_svg]:size-5",
+          danger ? "text-red-600" : "text-brand-600",
+        )}
+      >
+        {busy ? <Loader2 className="animate-spin" /> : icon}
+      </span>
+      <span className={cn("text-[12px] font-medium", danger ? "text-red-700" : "text-slate-600")}>{label}</span>
+    </button>
+  ),
+);
+RoundAction.displayName = "RoundAction";

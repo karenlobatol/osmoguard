@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-route
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import "./index.css";
+import "./lib/zod-es";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { ApiError } from "./lib/api";
 import { LogoMark } from "./components/Logo";
@@ -11,6 +12,7 @@ import { LoginPage } from "./pages/Login";
 import { RegisterPage } from "./pages/Register";
 import { ForgotPasswordPage, ResetPasswordPage } from "./pages/PasswordRecovery";
 import { initNative } from "./lib/native";
+import { lockZoomWhenStandalone } from "./lib/standalone";
 
 // Las pantallas con gráficas se cargan bajo demanda (Recharts es el bloque más pesado).
 const DashboardPage = lazy(() => import("./pages/Dashboard").then((m) => ({ default: m.DashboardPage })));
@@ -19,6 +21,10 @@ const ProfilePage = lazy(() => import("./pages/Profile").then((m) => ({ default:
 const NotFoundPage = lazy(() => import("./pages/NotFound").then((m) => ({ default: m.NotFoundPage })));
 const SciencePage = lazy(() => import("./pages/Science").then((m) => ({ default: m.SciencePage })));
 const AppShell = lazy(() => import("./components/AppShell").then((m) => ({ default: m.AppShell })));
+const AcidBasePage = lazy(() => import("./pages/tools/AcidBase").then((m) => ({ default: m.AcidBasePage })));
+const OsmolalityPage = lazy(() => import("./pages/tools/Osmolality").then((m) => ({ default: m.OsmolalityPage })));
+const PotassiumPage = lazy(() => import("./pages/tools/Potassium").then((m) => ({ default: m.PotassiumPage })));
+const CalciumPage = lazy(() => import("./pages/tools/Calcium").then((m) => ({ default: m.CalciumPage })));
 const NewSimulationPage = lazy(() => import("./pages/NewSimulation").then((m) => ({ default: m.NewSimulationPage })));
 const SimulationDetailPage = lazy(() => import("./pages/SimulationDetail").then((m) => ({ default: m.SimulationDetailPage })));
 
@@ -55,6 +61,7 @@ function PublicOnly({ children }: { children: ReactNode }) {
   return children;
 }
 
+lockZoomWhenStandalone();
 initNative();
 
 createRoot(document.getElementById("root")!).render(
@@ -74,13 +81,17 @@ createRoot(document.getElementById("root")!).render(
                 <Route path="simulaciones/nueva" element={<NewSimulationPage />} />
                 <Route path="simulaciones/:id" element={<SimulationDetailPage />} />
                 <Route path="historial" element={<HistoryPage />} />
+                <Route path="herramientas/gasometria" element={<AcidBasePage />} />
+                <Route path="herramientas/osmolalidad" element={<OsmolalityPage />} />
+                <Route path="herramientas/potasio" element={<PotassiumPage />} />
+                <Route path="herramientas/calcio" element={<CalciumPage />} />
                 <Route path="perfil" element={<ProfilePage />} />
                 <Route path="ciencia" element={<SciencePage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
             </Routes>
           </Suspense>
-          <Toaster position="top-center" richColors closeButton />
+          <Toaster position="top-center" toastOptions={{ style: { fontFamily: "inherit", borderRadius: "14px" } }} />
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

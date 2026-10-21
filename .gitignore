@@ -14,3 +14,4 @@ apps/web/android/.gradle
 *.jks
 *.keystore
 apps/web/android/app/release
+apps/web/dev-dist

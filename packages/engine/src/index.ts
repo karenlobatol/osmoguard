@@ -7,3 +7,8 @@ export * from "./formulas";
 export * from "./types";
 export * from "./assessment";
 export * from "./simulate";
+export * from "./modules/common";
+export * from "./modules/acidbase";
+export * from "./modules/osmolality";
+export * from "./modules/potassium";
+export * from "./modules/calcium";

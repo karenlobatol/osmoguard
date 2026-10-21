@@ -18,7 +18,8 @@ export type AuditAction =
   | "simulation.created"
   | "simulation.viewed"
   | "simulation.duplicated"
-  | "simulation.deleted";
+  | "simulation.deleted"
+  | "ai.explain";
 
 export function createAuditor(prisma: PrismaClient, hmacKey: string) {
   return async function audit(

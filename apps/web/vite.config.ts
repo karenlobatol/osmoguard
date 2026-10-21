@@ -6,7 +6,13 @@ import { fileURLToPath } from "node:url";
 
 export default defineConfig({
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
-  server: { port: 5173, proxy: { "/api": "http://127.0.0.1:3000" } },
+  server: {
+    port: 5173,
+    // changeOrigin: false conserva el Host original: la API lo usa para validar el mismo origen (CSRF).
+    proxy: { "/api": { target: "http://127.0.0.1:3000", changeOrigin: false, xfwd: true } },
+    // DEV_TUNNEL=1: servidor de desarrollo expuesto por un túnel HTTPS (Fast Refresh en un móvil real).
+    ...(process.env.DEV_TUNNEL ? { allowedHosts: [".trycloudflare.com"], hmr: { clientPort: 443, protocol: "wss" } } : {}),
+  },
   build: {
     target: "es2022",
     chunkSizeWarningLimit: 900,
@@ -31,16 +37,16 @@ export default defineConfig({
       injectRegister: false,
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
-        name: "Osmoguard — Simulador educativo de sodio",
+        name: "Osmoguard — Electrolitos y ácido-base",
         short_name: "Osmoguard",
-        description: "Simulador clínico educativo de líquidos y electrolitos. No es un dispositivo de prescripción.",
+        description: "Simulación de sodio e interpretación educativa de gasometría, osmolalidad, potasio y calcio.",
         lang: "es",
         start_url: "/",
         scope: "/",
         display: "standalone",
         orientation: "portrait",
-        background_color: "#F8FAFC",
-        theme_color: "#0B4F83",
+        background_color: "#F2F5F9",
+        theme_color: "#F2F5F9",
         categories: ["education", "medical"],
         icons: [
           { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
@@ -56,7 +62,8 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         runtimeCaching: [],
       },
-      devOptions: { enabled: false },
+      // Con DEV_TUNNEL se puede instalar la versión de desarrollo para probar el modo standalone.
+      devOptions: { enabled: !!process.env.DEV_TUNNEL, type: "module", navigateFallback: "index.html" },
     }),
   ],
 });

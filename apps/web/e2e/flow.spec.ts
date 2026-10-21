@@ -7,7 +7,7 @@ const snap = async (page: Page, name: string) => {
 };
 const a11y = async (page: Page) => {
   // Espera a que terminen las animaciones de entrada (la opacidad parcial falsea el contraste).
-  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
+  await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))));
   await page.waitForTimeout(400);
   const res = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
   const serious = res.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
@@ -33,27 +33,29 @@ test("flujo completo: registro, simulación, guardado, historial y borrado", asy
   await snap(page, "02-dashboard-empty");
 
   await page.goto("/simulaciones/nueva");
-  await expect(page.getByText("Casos de ejemplo")).toBeVisible();
+  await expect(page.getByText("Casos de práctica")).toBeVisible();
+  await page.getByRole("button", { name: /Introducir un caso propio/ }).click();
   // Validación por paso: no avanza sin datos obligatorios.
   await page.getByRole("button", { name: /Siguiente/ }).click();
   await expect(page.getByText("Obligatorio").first()).toBeVisible();
   await a11y(page);
   await snap(page, "03-wizard-validation");
 
+  await page.goto("/simulaciones/nueva");
   await page.getByRole("button", { name: /Hiponatremia tipo SIADH/ }).click();
   await expect(page.getByText("Escenarios (2)")).toBeVisible();
   await snap(page, "04-wizard-review");
   await page.getByRole("button", { name: /Ejecutar simulación/ }).click();
 
   await expect(page.getByRole("heading", { name: "Resultados de la simulación" })).toBeVisible();
-  await expect(page.getByText("Aplicabilidad del modelo")).toBeVisible();
+  await expect(page.getByText("Comparación rápida")).toBeVisible();
   await expect(page.getByText("Salino hipertónico").first()).toBeVisible();
-  await expect(page.locator(".recharts-surface").first()).toBeVisible();
+  await expect(page.getByText("Dentro del límite de corrección")).toBeVisible();
   await a11y(page);
   await snap(page, "05-results");
 
-  await page.getByRole("tab", { name: "Comparación" }).click();
-  await expect(page.getByText("Cambio estimado por litro según la solución")).toBeVisible();
+  await page.getByText("Ver comparación por litro").click();
+  await expect(page.locator("details", { hasText: "Ver comparación por litro" }).locator(".recharts-surface")).toBeVisible();
   await snap(page, "06-compare");
 
   await page.getByRole("button", { name: /Guardar en historial/ }).click();
@@ -71,7 +73,7 @@ test("flujo completo: registro, simulación, guardado, historial y borrado", asy
   await page.getByRole("button", { name: "Eliminar" }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Eliminar" }).click();
   await expect(page).toHaveURL(/\/historial$/);
-  await expect(page.getByText("Historial vacío")).toBeVisible();
+  await expect(page.getByText("Aún no hay casos guardados")).toBeVisible();
 
   await page.goto("/ciencia");
   await expect(page.getByRole("heading", { name: "Cómo calcula Osmoguard" })).toBeVisible();
@@ -104,8 +106,9 @@ test("datos fuera de alcance bloquean resultados", async ({ page }) => {
   await page.getByRole("button", { name: "Crear cuenta" }).click();
   await expect(page.getByRole("heading", { name: /Hola/ })).toBeVisible();
   await page.goto("/simulaciones/nueva");
+  await page.getByRole("button", { name: /Introducir un caso propio/ }).click();
   await page.getByLabel("Edad").fill("12");
-  await page.getByLabel("Sexo biológico").selectOption("female");
+  await page.getByText("Mujer", { exact: true }).click();
   await page.getByLabel("Peso").fill("40");
   await page.getByRole("button", { name: /Siguiente/ }).click();
   await page.getByLabel("Sodio sérico").fill("120");

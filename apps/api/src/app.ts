@@ -26,6 +26,8 @@ import { authRoutes } from "./routes/auth";
 import { engineRoutes } from "./routes/engine";
 import { simulationRoutes } from "./routes/simulations";
 import { userRoutes } from "./routes/users";
+import { toolRoutes } from "./routes/tools";
+import { aiRoutes } from "./routes/ai";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -177,6 +179,8 @@ export async function buildApp({ env, prisma = new PrismaClient(), logger, maile
   await app.register(userRoutes, { prefix: "/api/users" });
   await app.register(engineRoutes, { prefix: "/api/engine" });
   await app.register(simulationRoutes, { prefix: "/api/simulations" });
+  await app.register(toolRoutes, { prefix: "/api/tools" });
+  await app.register(aiRoutes, { prefix: "/api/ai" });
 
   app.addHook("onClose", async () => {
     await prisma.$disconnect();

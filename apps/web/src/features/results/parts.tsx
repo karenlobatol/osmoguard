@@ -8,10 +8,10 @@ import { cn } from "@/lib/utils";
 import { SERIES_HEX, fmt, fmt1, signed } from "@/lib/format";
 
 const LEVEL = {
-  info: { icon: Info, cls: "border-brand-100 bg-brand-50/60 text-brand-800", label: "Información" },
-  warning: { icon: AlertTriangle, cls: "border-amber-200 bg-amber-50 text-amber-900", label: "Advertencia" },
-  danger: { icon: AlertOctagon, cls: "border-red-200 bg-red-50 text-red-900", label: "Alerta" },
-  blocked: { icon: Ban, cls: "border-slate-300 bg-slate-100 text-slate-900", label: "Bloqueado" },
+  info: { icon: Info, cls: "bg-brand-50 text-brand-800", label: "Información" },
+  warning: { icon: AlertTriangle, cls: "bg-amber-50 text-amber-900", label: "Advertencia" },
+  danger: { icon: AlertOctagon, cls: "bg-red-50 text-red-900", label: "Alerta" },
+  blocked: { icon: Ban, cls: "bg-slate-100 text-slate-900", label: "Bloqueado" },
 } as const;
 
 export function FindingList({ findings, empty }: { findings: Finding[]; empty?: string }) {
@@ -24,7 +24,7 @@ export function FindingList({ findings, empty }: { findings: Finding[]; empty?: 
         .map((f) => {
           const { icon: Icon, cls, label } = LEVEL[f.level];
           return (
-            <li key={f.code} className={cn("flex gap-3 rounded-lg border p-3 text-sm", cls)}>
+            <li key={f.code} className={cn("flex gap-3 rounded-xl p-3.5 text-sm", cls)}>
               <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
               <div className="min-w-0">
                 <div className="font-medium">

@@ -28,6 +28,9 @@ const envSchema = z
       .refine((v) => typeof v === "boolean" || (Number.isInteger(v) && v >= 0 && v <= 5), "TRUST_PROXY inválido"),
     ENABLE_DOCS: bool.default("true"),
     /** Multiplicador de los límites de peticiones (1 en producción; mayor solo en desarrollo/E2E). */
+    /** IA explicativa: sin clave la función queda desactivada. Nunca se expone al cliente. */
+    OPENAI_API_KEY: z.string().optional().transform((v) => (v ? v : undefined)),
+    OPENAI_MODEL: z.string().default("gpt-5.4-mini"),
     RATE_LIMIT_FACTOR: z.coerce.number().int().min(1).max(100).default(1),
   })
   .superRefine((env, ctx) => {

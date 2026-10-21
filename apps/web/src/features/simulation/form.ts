@@ -13,7 +13,7 @@ export const formSchema = z
   .object({
     patient: z.object({
       ageYears: req(0, 120).int("Años enteros"),
-      sex: z.enum(["male", "female"], { required_error: "Seleccione" }),
+      sex: z.enum(["male", "female"], { errorMap: () => ({ message: "Seleccione el sexo biológico" }) }),
       weightKg: req(1, 400),
       heightCm: opt(40, 250),
       chronicity: z.enum(["acute", "chronic", "unknown"]),

@@ -14,12 +14,29 @@
   --color-teal-600: #0d9488;
   --color-teal-700: #0f766e;
   --color-ink: #0f172a;
-  --color-canvas: #f8fafc;
+  --color-canvas: #f2f5f9;
+  /* slate-500 algo más oscuro: ≥ 4,5:1 también sobre el fondo gris claro (WCAG AA). */
+  --color-slate-500: #586679;
+  /* Zonas de sodio (significado fijo en toda la app): bajo = azul, normal = verde, alto = naranja. */
+  --color-low-50: #eff6ff;
+  --color-low-100: #dbeafe;
+  --color-low-500: #3b82f6;
+  --color-low-700: #1d4ed8;
+  --color-ok-50: #ecfdf5;
+  --color-ok-100: #d1fae5;
+  --color-ok-500: #10b981;
+  --color-ok-700: #047857;
+  --color-high-50: #fff7ed;
+  --color-high-100: #ffedd5;
+  --color-high-500: #f97316;
+  --color-high-700: #c2410c;
   --color-series-1: #1f6fb2;
   --color-series-2: #d9611e;
   --color-series-3: #0f9f8f;
   --color-series-4: #8b5cf6;
   --radius-xl: 0.875rem;
+  --radius-2xl: 1.25rem;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 16px -4px rgb(15 23 42 / 0.08);
   --animate-in: fade-in 0.2s ease-out;
   @keyframes fade-in {
     from { opacity: 0; transform: translateY(4px); }
@@ -28,7 +45,11 @@
 }
 
 @layer base {
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
+  /* Páginas internas: el documento queda fijo y desplaza el contenedor de la app. */
+  html.app-locked, html.app-locked body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+  /* Instalada como app: sin resaltado gris al tocar ni rebote que delate el contenedor web. */
+  html.standalone { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
   body {
     @apply bg-canvas text-ink antialiased;
     font-feature-settings: "cv11", "ss01";
@@ -46,3 +67,48 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* Las notificaciones usan la tipografía de la app. */
+[data-sonner-toaster] { font-family: var(--font-sans) !important; }
+
+/* --- Pantallas de acceso --- */
+.auth-mesh {
+  background-color: #061726;
+  background-image:
+    radial-gradient(60% 50% at 15% 10%, rgb(31 111 178 / 0.55) 0%, transparent 70%),
+    radial-gradient(45% 40% at 90% 25%, rgb(13 148 136 / 0.35) 0%, transparent 70%),
+    radial-gradient(70% 60% at 60% 110%, rgb(16 59 92 / 0.9) 0%, transparent 70%);
+}
+/* Grano sutil (SVG en línea, permitido por la CSP img-src data:). */
+.auth-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.auth-grid {
+  background-image: linear-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(70% 60% at 50% 40%, black 20%, transparent 75%);
+}
+@keyframes og-float { 0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); } 50% { transform: translateY(-8px) rotate(var(--r, 0deg)); } }
+.og-float { animation: og-float 7s ease-in-out infinite; }
+.og-float-slow { animation: og-float 9s ease-in-out infinite; animation-delay: -3s; }
+@keyframes og-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.og-rise { animation: og-rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+/* Texto generado por la IA */
+.ai-prose { font-size: 15px; line-height: 1.6; color: #334155; }
+.ai-prose h3 { margin: 1.25rem 0 0.4rem; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #586679; }
+.ai-prose h3:first-child { margin-top: 0; }
+.ai-prose p { margin: 0.35rem 0; }
+.ai-prose ol, .ai-prose ul { margin: 0.35rem 0; padding-left: 1.25rem; }
+.ai-prose ol { list-style: decimal; }
+.ai-prose ul { list-style: disc; }
+.ai-prose li { margin: 0.3rem 0; padding-left: 0.15rem; }
+.ai-prose li::marker { color: #94a3b8; }
+.ai-prose strong { color: #0f172a; font-weight: 600; }
+.ai-prose em { color: #0a456f; }

@@ -1,6 +1,6 @@
 # Osmoguard
 
-Simulador clínico **educativo** de líquidos y electrolitos, centrado en los trastornos del sodio. Es una PWA instalable con API propia, PostgreSQL y app Android.
+Plataforma **educativa** de líquidos, electrolitos y equilibrio ácido-base. Incluye simulación de sodio, interpretación de gasometría, osmolalidad, potasio y calcio, con explicaciones opcionales de IA. Es una PWA instalable con API propia, PostgreSQL y app Android.
 
 > Osmoguard muestra simulaciones matemáticas con sus supuestos, incertidumbre y límites. **No prescribe tratamientos ni es un dispositivo médico.**
 
@@ -10,6 +10,8 @@ Simulador clínico **educativo** de líquidos y electrolitos, centrado en los tr
 - **API** Fastify + Prisma + PostgreSQL: JWT de corta duración, refresh token rotativo con detección de reutilización, Argon2id, CSRF, rate limiting, cifrado en reposo, auditoría y OpenAPI.
 - **PWA** React 19 + Tailwind: asistente por pasos, gráficos con incertidumbre, comparación de escenarios, historial, perfil, y una sección de ciencia y limitaciones.
 - **Android** con Capacitor.
+- **Herramientas de interpretación:** gasometría con compensación, anión gap y delta-delta; osmolalidad y tonicidad; potasio; calcio corregido e iónico. Incluyen casos de ejemplo, escalas visuales, razonamiento y referencias. Estos análisis no se guardan en el historial de simulaciones de sodio.
+- **Tutor con OpenAI:** explica los resultados recalculados en el servidor. Se configura con `OPENAI_API_KEY` y `OPENAI_MODEL` en `apps/api/.env` o en las variables de Coolify; Docker Compose las pasa únicamente a la API. La clave nunca debe llevar el prefijo `VITE_` ni incorporarse al frontend. Sin clave, se oculta el botón de IA y las herramientas siguen funcionando.
 - **Despliegue** en Coolify con Docker Compose y un túnel de Cloudflare.
 
 ## Estructura
