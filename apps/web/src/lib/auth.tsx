@@ -13,6 +13,7 @@ interface AuthState {
 }
 
 const AuthContext = createContext<AuthState | null>(null);
+const SESSION_HINT = "og_session";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
@@ -20,12 +21,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthState["status"]>("loading");
 
   const accept = useCallback((r: AuthResponse) => {
+    // Indicador no sensible: evita intentar renovar (y un 401 en consola) cuando nunca hubo sesión.
+    localStorage.setItem(SESSION_HINT, "1");
     setAccessToken(r.accessToken);
     setUserState(r.user);
     setStatus("authenticated");
   }, []);
 
   const clear = useCallback(() => {
+    localStorage.removeItem(SESSION_HINT);
     setAccessToken(null);
     setUserState(null);
     setStatus("anonymous");
@@ -35,6 +39,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setSessionLostHandler(clear);
     // Restaura la sesión a partir de la cookie HttpOnly del refresh token.
+    if (!localStorage.getItem(SESSION_HINT)) {
+      clear();
+      return;
+    }
     refreshSession()
       .then((r) => (r ? accept(r) : clear()))
       .catch(() => clear());

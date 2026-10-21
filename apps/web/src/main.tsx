@@ -3,23 +3,22 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
-import { MotionConfig } from "motion/react";
 import "./index.css";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { ApiError } from "./lib/api";
-import { AppShell } from "./components/AppShell";
 import { LogoMark } from "./components/Logo";
 import { LoginPage } from "./pages/Login";
 import { RegisterPage } from "./pages/Register";
 import { ForgotPasswordPage, ResetPasswordPage } from "./pages/PasswordRecovery";
-import { DashboardPage } from "./pages/Dashboard";
-import { HistoryPage } from "./pages/History";
-import { ProfilePage } from "./pages/Profile";
-import { NotFoundPage } from "./pages/NotFound";
-import { SciencePage } from "./pages/Science";
 import { initNative } from "./lib/native";
 
 // Las pantallas con gráficas se cargan bajo demanda (Recharts es el bloque más pesado).
+const DashboardPage = lazy(() => import("./pages/Dashboard").then((m) => ({ default: m.DashboardPage })));
+const HistoryPage = lazy(() => import("./pages/History").then((m) => ({ default: m.HistoryPage })));
+const ProfilePage = lazy(() => import("./pages/Profile").then((m) => ({ default: m.ProfilePage })));
+const NotFoundPage = lazy(() => import("./pages/NotFound").then((m) => ({ default: m.NotFoundPage })));
+const SciencePage = lazy(() => import("./pages/Science").then((m) => ({ default: m.SciencePage })));
+const AppShell = lazy(() => import("./components/AppShell").then((m) => ({ default: m.AppShell })));
 const NewSimulationPage = lazy(() => import("./pages/NewSimulation").then((m) => ({ default: m.NewSimulationPage })));
 const SimulationDetailPage = lazy(() => import("./pages/SimulationDetail").then((m) => ({ default: m.SimulationDetailPage })));
 
@@ -60,7 +59,6 @@ initNative();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <MotionConfig reducedMotion="user">
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
@@ -86,6 +84,5 @@ createRoot(document.getElementById("root")!).render(
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
-    </MotionConfig>
   </StrictMode>,
 );

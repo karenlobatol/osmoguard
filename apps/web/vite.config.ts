@@ -12,7 +12,14 @@ export default defineConfig({
     chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
-        manualChunks: { charts: ["recharts"], react: ["react", "react-dom", "react-router"] },
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined;
+          if (/node_modules\/(recharts|d3-[a-z-]+|victory-vendor|es-toolkit|redux|@reduxjs|immer|reselect|react-redux|decimal\.js-light|internmap|eventemitter3|tiny-invariant)\//.test(id)) return "charts";
+          if (/node_modules\/(react|react-dom|scheduler|react-router|react-is|use-sync-external-store)\//.test(id)) return "react";
+          if (/node_modules\/(clsx|tailwind-merge|class-variance-authority)\//.test(id)) return "ui";
+          if (/motion|framer-motion/.test(id)) return "motion";
+          return undefined;
+        },
       },
     },
   },

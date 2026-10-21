@@ -1,2 +1,46 @@
-# osmoguard
-Simulador Inteligente de líquidos y electrolitos 
+# Osmoguard
+
+Simulador clínico **educativo** de líquidos y electrolitos, centrado en los trastornos del sodio. Es una PWA instalable con API propia, PostgreSQL y app Android.
+
+> Osmoguard muestra simulaciones matemáticas con sus supuestos, incertidumbre y límites. **No prescribe tratamientos ni es un dispositivo médico.**
+
+## Qué incluye
+
+- **Motor clínico determinista y versionado** (`packages/engine`): Adrogué-Madias, balance de masas tipo Edelman con pérdidas urinarias y extrarrenales, agua corporal (fracción y Watson), déficit de agua libre, sodio corregido por glucosa, eGFR CKD-EPI 2021, bloqueos de aplicabilidad y alertas de sobrecorrección configurables.
+- **API** Fastify + Prisma + PostgreSQL: JWT de corta duración, refresh token rotativo con detección de reutilización, Argon2id, CSRF, rate limiting, cifrado en reposo, auditoría y OpenAPI.
+- **PWA** React 19 + Tailwind: asistente por pasos, gráficos con incertidumbre, comparación de escenarios, historial, perfil, y una sección de ciencia y limitaciones.
+- **Android** con Capacitor.
+- **Despliegue** en Coolify con Docker Compose y un túnel de Cloudflare.
+
+## Estructura
+
+```
+packages/engine      Motor clínico (TypeScript puro)
+packages/contracts   Esquemas y DTO compartidos
+apps/api             API Fastify + Prisma
+apps/web             PWA + proyecto Android
+deploy/              nginx y workflows de CI
+docs/                Documentación
+```
+
+## Inicio rápido
+
+```bash
+npm install
+node apps/api/scripts/dev-db.mjs &                 # PostgreSQL embebido
+cp apps/api/.env.example apps/api/.env             # complete DATA_ENCRYPTION_KEY
+(cd apps/api && npx prisma migrate deploy)
+npm run dev:api & npm run dev:web                  # http://localhost:5173
+npm test                                           # motor + API
+```
+
+## Documentación
+
+| Documento | Contenido |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Arquitectura, modelo de datos, navegación, contratos de API, plan de pruebas, riesgos y criterios de aceptación |
+| [docs/CLINICAL-ENGINE.md](docs/CLINICAL-ENGINE.md) | Fórmulas, supuestos, incertidumbre, aplicabilidad, alertas y registro de limitaciones clínicas |
+| [docs/SECURITY-AUDIT.md](docs/SECURITY-AUDIT.md) | Auditoría OWASP con evidencia y riesgos residuales |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Coolify, variables, túnel, backups, retención, APK y AAB |
+| [docs/USER-MANUAL.md](docs/USER-MANUAL.md) | Manual de usuario |
+| [docs/DELIVERY-REPORT.md](docs/DELIVERY-REPORT.md) | Estado final y checklist de aceptación |

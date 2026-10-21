@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { motion } from "motion/react";
 import { Activity, LineChart, ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
@@ -38,11 +37,11 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
         <div className="lg:hidden">
           <Logo />
         </div>
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="m-auto w-full max-w-sm py-10">
+        <div className="m-auto w-full max-w-sm animate-in py-10">
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           {subtitle && <p className="mt-1.5 text-[15px] text-slate-600">{subtitle}</p>}
           <div className="mt-8">{children}</div>
-        </motion.div>
+        </div>
       </section>
     </div>
   );

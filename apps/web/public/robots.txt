@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /login
+Allow: /ciencia/publica
+Disallow: /api/
+Disallow: /

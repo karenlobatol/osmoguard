@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router";
+import { MotionConfig } from "motion/react";
 import { BookOpen, FlaskConical, History, LayoutDashboard, LogOut, Plus, UserRound, WifiOff } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { useAuth } from "@/lib/auth";
@@ -105,7 +106,9 @@ export function AppShell() {
       </header>
 
       <main id="main" className="mx-auto max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:pb-12 lg:pt-8">
-        <Outlet />
+        <MotionConfig reducedMotion="user">
+          <Outlet />
+        </MotionConfig>
       </main>
 
       {/* Navegación inferior (móvil) */}
