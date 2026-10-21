@@ -1,0 +1,141 @@
+// Modelo de datos de Osmoguard.
+// Principio de minimización: no se almacenan identificadores de pacientes.
+// Las entradas clínicas y notas se guardan cifradas (AES-256-GCM) a nivel de aplicación.
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x", "linux-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique @db.VarChar(254)
+  passwordHash String    @db.VarChar(255)
+  name         String    @db.VarChar(80)
+  profession   String?   @db.VarChar(80)
+  role         Role      @default(USER)
+  alertConfig  Json?
+  failedLogins Int       @default(0)
+  lockedUntil  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sessions       Session[]
+  simulations    Simulation[]
+  resetTokens    PasswordResetToken[]
+  auditLogs      AuditLog[]
+}
+
+/// Refresh tokens opacos. Solo se guarda su hash SHA-256.
+/// familyId agrupa la cadena de rotación para detectar reutilización.
+model Session {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  familyId     String    @db.Uuid
+  tokenHash    String    @unique @db.Char(64)
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  revokeReason String?   @db.VarChar(40)
+  replacedById String?   @db.Uuid
+  userAgent    String?   @db.VarChar(200)
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+}
+
+model Simulation {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @db.Uuid
+  title          String    @db.VarChar(80)
+  /// Notas cifradas (base64 de iv|tag|ciphertext).
+  notesEnc       String?
+  /// Entrada del paciente cifrada.
+  patientEnc     String
+  alertConfig    Json
+  /// Evaluación global del motor (paciente, aplicabilidad, comparación de soluciones) sin los escenarios.
+  assessment     Json
+  classification String    @db.VarChar(20)
+  status         String    @db.VarChar(10)
+  serumSodium    Decimal   @db.Decimal(5, 1)
+  engineVersion  String    @db.VarChar(20)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scenarios SimulationScenario[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, deletedAt])
+}
+
+model SimulationScenario {
+  id           String  @id @default(uuid()) @db.Uuid
+  simulationId String  @db.Uuid
+  position     Int     @db.SmallInt
+  label        String  @db.VarChar(60)
+  solutionId   String  @db.VarChar(40)
+  rateMlH      Decimal @db.Decimal(7, 1)
+  horizonHours Int     @db.SmallInt
+
+  simulation Simulation        @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  result     SimulationResult?
+
+  @@unique([simulationId, position])
+}
+
+model SimulationResult {
+  id            String   @id @default(uuid()) @db.Uuid
+  scenarioId    String   @unique @db.Uuid
+  engineVersion String   @db.VarChar(20)
+  /// Resultado del escenario + evaluación global del motor en el momento de ejecución.
+  output        Json
+  computedAt    DateTime @default(now())
+
+  scenario SimulationScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @db.Uuid
+  action     String   @db.VarChar(50)
+  entityType String?  @db.VarChar(30)
+  entityId   String?  @db.Uuid
+  /// HMAC de la IP: permite correlacionar sin almacenar la IP en claro.
+  ipHash     String?  @db.Char(64)
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([action, createdAt(sort: Desc)])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String    @unique @db.Char(64)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
