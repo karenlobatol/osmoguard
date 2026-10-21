@@ -1,0 +1,48 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --color-brand-50: #eaf4fa;
+  --color-brand-100: #d3e7f4;
+  --color-brand-200: #a9cfe8;
+  --color-brand-500: #1f6fb2;
+  --color-brand-600: #0b4f83;
+  --color-brand-700: #0a456f;
+  --color-brand-800: #103b5c;
+  --color-brand-900: #0c2c45;
+  --color-teal-600: #0d9488;
+  --color-teal-700: #0f766e;
+  --color-ink: #0f172a;
+  --color-canvas: #f8fafc;
+  --color-series-1: #1f6fb2;
+  --color-series-2: #d9611e;
+  --color-series-3: #0f9f8f;
+  --color-series-4: #8b5cf6;
+  --radius-xl: 0.875rem;
+  --animate-in: fade-in 0.2s ease-out;
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-canvas text-ink antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-brand-600; }
+  input[type="number"] { -moz-appearance: textfield; }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+}
+
+.tabular { font-variant-numeric: tabular-nums; }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.safe-top { padding-top: env(safe-area-inset-top); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

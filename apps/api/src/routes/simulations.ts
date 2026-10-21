@@ -52,7 +52,7 @@ export const simulationRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     "/preview",
-    { schema: { tags: ["simulations"], security, body: simulationRequestSchema, description: "Ejecuta el motor sin guardar." }, config: { rateLimit: { max: 60, timeWindow: "1 minute" } } },
+    { schema: { tags: ["simulations"], security, body: simulationRequestSchema, description: "Ejecuta el motor sin guardar." }, config: { rateLimit: { max: 60 * app.env.RATE_LIMIT_FACTOR, timeWindow: "1 minute" } } },
     async (req) => runSimulation(req.body),
   );
 

@@ -15,7 +15,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     "/register",
-    { schema: { tags: ["auth"], body: registerSchema }, config: { rateLimit: { max: 5, timeWindow: "10 minutes" } } },
+    { schema: { tags: ["auth"], body: registerSchema }, config: { rateLimit: { max: 5 * app.env.RATE_LIMIT_FACTOR, timeWindow: "10 minutes" } } },
     async (req, reply) => {
       const { name, email, password } = req.body;
       const exists = await prisma.user.findUnique({ where: { email } });
@@ -30,7 +30,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     "/login",
-    { schema: { tags: ["auth"], body: loginSchema }, config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } },
+    { schema: { tags: ["auth"], body: loginSchema }, config: { rateLimit: { max: 10 * app.env.RATE_LIMIT_FACTOR, timeWindow: "5 minutes" } } },
     async (req, reply) => {
       const { email, password } = req.body;
       const user = await prisma.user.findUnique({ where: { email } });
@@ -61,7 +61,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     "/refresh",
-    { schema: { tags: ["auth"] }, preHandler: app.csrfGuard, config: { rateLimit: { max: 60, timeWindow: "1 minute" } } },
+    { schema: { tags: ["auth"] }, preHandler: app.csrfGuard, config: { rateLimit: { max: 60 * app.env.RATE_LIMIT_FACTOR, timeWindow: "1 minute" } } },
     async (req, reply) => {
       const result = await sessions.rotate(req.cookies[REFRESH_COOKIE], req, reply);
       if (!result.ok) {
@@ -92,7 +92,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     "/forgot-password",
-    { schema: { tags: ["auth"], body: forgotPasswordSchema }, config: { rateLimit: { max: 5, timeWindow: "1 hour" } } },
+    { schema: { tags: ["auth"], body: forgotPasswordSchema }, config: { rateLimit: { max: 5 * app.env.RATE_LIMIT_FACTOR, timeWindow: "1 hour" } } },
     async (req, reply) => {
       const user = await prisma.user.findUnique({ where: { email: req.body.email } });
       if (user) {
@@ -112,7 +112,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     "/reset-password",
-    { schema: { tags: ["auth"], body: resetPasswordSchema }, config: { rateLimit: { max: 10, timeWindow: "15 minutes" } } },
+    { schema: { tags: ["auth"], body: resetPasswordSchema }, config: { rateLimit: { max: 10 * app.env.RATE_LIMIT_FACTOR, timeWindow: "15 minutes" } } },
     async (req, reply) => {
       const record = await prisma.passwordResetToken.findUnique({ where: { tokenHash: sha256(req.body.token) } });
       if (!record || record.usedAt || record.expiresAt < new Date()) throw new AppError(400, "RESET_TOKEN_INVALID", "El enlace no es válido o ha caducado");

@@ -27,7 +27,7 @@ export const userRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     "/me/password",
-    { schema: { tags: ["users"], security, body: changePasswordSchema }, config: { rateLimit: { max: 5, timeWindow: "15 minutes" } } },
+    { schema: { tags: ["users"], security, body: changePasswordSchema }, config: { rateLimit: { max: 5 * app.env.RATE_LIMIT_FACTOR, timeWindow: "15 minutes" } } },
     async (req, reply) => {
       const user = await prisma.user.findUniqueOrThrow({ where: { id: req.auth.sub } });
       if (!(await verifyPassword(user.passwordHash, req.body.currentPassword))) throw new AppError(400, "WRONG_PASSWORD", "La contraseña actual no es correcta");

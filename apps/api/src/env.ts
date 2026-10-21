@@ -22,6 +22,8 @@ const envSchema = z
     MAIL_FROM: z.string().default("Osmoguard <no-reply@osmoguard.local>"),
     TRUST_PROXY: bool.default("false"),
     ENABLE_DOCS: bool.default("true"),
+    /** Multiplicador de los límites de peticiones (1 en producción; mayor solo en desarrollo/E2E). */
+    RATE_LIMIT_FACTOR: z.coerce.number().int().min(1).max(100).default(1),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === "production" && /change-me/.test(env.JWT_SECRET + env.AUDIT_HMAC_KEY))

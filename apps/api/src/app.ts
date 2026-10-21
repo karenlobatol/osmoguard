@@ -112,7 +112,7 @@ export async function buildApp({ env, prisma = new PrismaClient(), logger, maile
   await app.register(cookie);
   await app.register(rateLimit, {
     global: true,
-    max: 300,
+    max: 300 * env.RATE_LIMIT_FACTOR,
     timeWindow: "1 minute",
     errorResponseBuilder: (_req, ctx) => ({
       statusCode: 429,
