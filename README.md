@@ -1,5 +1,7 @@
 # Osmoguard
 
+Karen Estefanía Lobato Llangari y Aracely Lizbeth Paredes Buenaño
+
 Plataforma **educativa** de líquidos, electrolitos y equilibrio ácido-base. Incluye simulación de sodio, interpretación de gasometría, osmolalidad, potasio y calcio, con explicaciones opcionales de IA. Es una PWA instalable con API propia, PostgreSQL y app Android.
 
 > Osmoguard muestra simulaciones matemáticas con sus supuestos, incertidumbre y límites. **No prescribe tratamientos ni es un dispositivo médico.**
